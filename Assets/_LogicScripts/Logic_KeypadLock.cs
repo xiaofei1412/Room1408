@@ -72,8 +72,11 @@ public class Logic_KeypadLock : MonoBehaviour
             // 输出带边界符的日志，用于物理排查是否仍有异物（如打印出 "[1408]"）
             Debug.Log($"密码错误. 玩家输入:[{input}], 目标密码:[{target}]");
 
-            if (audioSource != null && errorSound != null)
-                audioSource.PlayOneShot(errorSound);
+            // 接入全局音效管理器播放 2D UI 音效
+            if (errorSound != null && Audio_SoundManager.Instance != null)
+            {
+                Audio_SoundManager.Instance.PlaySFX2D(errorSound);
+            }
 
             // 👉 清空输入
             inputField.text = "";
