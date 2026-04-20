@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.EventSystems;
 
 /// <summary>
 /// 交互射线系统：负责第一人称视角控制、射线检测可交互物体、准星显示
@@ -70,7 +71,7 @@ public class Core_Raycaster : MonoBehaviour
     }
 
     /// <summary>
-    /// 从屏幕中心发射射线，检测带有Interactable标签的物体
+    /// 从屏幕中心发射射线，检测带有Interactable或PuzzleUI标签的物体
     /// </summary>
     private void CastRay()
     {
@@ -84,8 +85,8 @@ public class Core_Raycaster : MonoBehaviour
         // 发射射线并检测碰撞
         if (Physics.Raycast(ray, out hit, rayDistance))
         {
-            // 判断碰撞物体是否带有Interactable标签
-            if (hit.collider.CompareTag("Interactable"))
+            // 判断碰撞物体标签
+            if (hit.collider.CompareTag("Interactable") || hit.collider.CompareTag("PuzzleUI"))
             {
                 currentInteractableObj = hit.collider.gameObject;
             }
@@ -97,13 +98,31 @@ public class Core_Raycaster : MonoBehaviour
     /// </summary>
     private void CheckClick()
     {
-        // 如果正在检视中，不处理点击
         if (inspectSystem.isInspecting) return;
 
-        // 鼠标左键点击且检测到可交互物体时，启动检视
+        // 防 UI 穿透机制：
+        // 如果当前场景存在 EventSystem，且鼠标指针正悬停在任何 UI 元素上，直接阻断 3D 交互。
+        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
+        {
+            return; 
+        }
+
         if (Input.GetMouseButtonDown(0) && currentInteractableObj != null)
         {
-            inspectSystem.StartInspect(currentInteractableObj);
+            // 分支 1：检视 3D 物品
+            if (currentInteractableObj.CompareTag("Interactable"))
+            {
+                inspectSystem.StartInspect(currentInteractableObj);
+            }
+            // 分支 2：触发 2D UI 机关
+            else if (currentInteractableObj.CompareTag("PuzzleUI"))
+            {
+                Logic_KeypadLock keypad = currentInteractableObj.GetComponent<Logic_KeypadLock>();
+                if (keypad != null)
+                {
+                    keypad.OpenKeypad();
+                }
+            }
         }
     }
 
