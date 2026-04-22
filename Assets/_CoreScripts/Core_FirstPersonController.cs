@@ -13,36 +13,38 @@ public class Core_FirstPersonController : MonoBehaviour
 
     private CharacterController controller;
     private Vector3 velocity;
-    private float xRotation = 0f;
+    private float xRotation = 0f;  // 上下视角（相机）
+    private float yRotation = 0f;  // 左右视角（角色）
 
     void Start()
     {
         controller = GetComponent<CharacterController>();
-        // 锁定鼠标并隐藏，按ESC可释放鼠标（测试时用）
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
     }
 
     void Update()
     {
-        // 1. 视角控制 (Mouse Look)
+        // 鼠标输入
         float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity;
         float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity;
 
+        // 上下旋转：正常转动
         xRotation -= mouseY;
-        xRotation = Mathf.Clamp(xRotation, -90f, 90f); // 限制抬头低头角度
-
+        xRotation = Mathf.Clamp(xRotation, -90f, 90f);
         playerCamera.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
-        transform.Rotate(Vector3.up * mouseX); // 左右转动身体
 
-        // 2. 移动控制 (WASD Movement)
+        // 左右旋转：角度累积赋值
+        yRotation += mouseX;
+        transform.rotation = Quaternion.Euler(0f, yRotation, 0f);
+
+        // 移动逻辑
         float x = Input.GetAxis("Horizontal");
         float z = Input.GetAxis("Vertical");
-
         Vector3 move = transform.right * x + transform.forward * z;
         controller.Move(move * walkSpeed * Time.deltaTime);
 
-        // 3. 基础重力 (Gravity)
+        // 重力
         if (controller.isGrounded && velocity.y < 0)
         {
             velocity.y = -2f;
