@@ -10,8 +10,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f4bdd08a45af5d54990a82d309409cae, type: 3}
-  m_Name: Item_Key
+  m_Name: Item_Note_MainDoor
   m_EditorClassIdentifier: Assembly-CSharp::ItemData
-  itemName: Item_Key
-  itemIcon: {fileID: 21300000, guid: b72b1bce28a91ab4bbc000c66b497409, type: 3}
-  itemPrefab: {fileID: 5459286595269771941, guid: f10ee8f302bbdff469ca45c332397fe5, type: 3}
+  itemName: Note_MainDoor
+  itemIcon: {fileID: 21300000, guid: a8de551ca6f2d9b4ba47e6c5cad6d17d, type: 3}
+  itemPrefab: {fileID: 8151897937943604275, guid: 8d8e397b6c0b90245a98a4278927e0b5, type: 3}

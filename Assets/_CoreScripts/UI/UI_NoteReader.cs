@@ -10,8 +10,12 @@ public class UI_NoteReader : MonoBehaviour
     [Header("UI 绑定")]
     public TextMeshProUGUI tmpTitle;
     public TextMeshProUGUI tmpContent;
-    public RawImage uiPaperBackground; // 底层纸张
-    public RawImage uiBloodOverlay;    // 顶层血渍/污渍
+    public RawImage uiBloodOverlay;
+
+    [Header("UI 渲染组件")]
+    // 统一退回 RawImage，并使用 Texture，消除类型冲突
+    public RawImage uiPaperBackground; 
+    public Texture defaultCleanPaper;
 
     [Header("打字机配置")]
     public float typingSpeed = 0.05f;
@@ -24,8 +28,9 @@ public class UI_NoteReader : MonoBehaviour
 
     void Awake()
     {
-        playerController = FindObjectOfType<Core_FirstPersonController>();
-        raycaster = FindObjectOfType<Core_Raycaster>();
+        // 使用最新的寻址接口，消除 CS0618 警告
+        playerController = Object.FindFirstObjectByType<Core_FirstPersonController>();
+        raycaster = Object.FindFirstObjectByType<Core_Raycaster>();
     }
 
     public void DisplayNote(string title, string content, Logic_ProgressiveDecay decayScript = null, GameObject noteObj = null)
@@ -36,18 +41,25 @@ public class UI_NoteReader : MonoBehaviour
         tmpContent.text = "";
         fullContent = content;
         activeDecayScript = decayScript;
-        currentActiveNoteObject = noteObj; // 缓存物理实体
-        
-        // 核心逻辑：变量化贴图推送
-        if (activeDecayScript != null)
+        currentActiveNoteObject = noteObj;
+
+        // 严密的材质分流逻辑
+        if (activeDecayScript != null && activeDecayScript.basePaperTexture != null)
         {
-            // 推送底图
+            // 腐化纸条模式
             uiPaperBackground.texture = activeDecayScript.basePaperTexture;
-            // 推送血渍图
             uiBloodOverlay.texture = activeDecayScript.decayTexture;
-            
-            // 实时同步初始透明度
             SetOverlayAlpha(activeDecayScript.CurrentDecay);
+        }
+        else
+        {
+            // 正常纸条模式 (Fallback)
+            uiPaperBackground.texture = defaultCleanPaper;
+            if (uiBloodOverlay != null)
+            {
+                uiBloodOverlay.texture = null;
+                SetOverlayAlpha(0f); // 确保干净纸条上没有隐形血迹
+            }
         }
 
         uiPaperBackground.gameObject.SetActive(true);
@@ -71,16 +83,9 @@ public class UI_NoteReader : MonoBehaviour
         typingCoroutine = null;
     }
 
-    // 物理控制透明度的方法
     private void SetOverlayAlpha(float alpha)
     {
-        if (uiBloodOverlay == null)
-        {
-            // 如果槽位是空的，立刻报警！
-            Debug.LogError("【致命物理断层】UI_BloodOverlay 未在 Inspector 中绑定！");
-            return;
-        }
-
+        if (uiBloodOverlay == null) return;
         Color c = uiBloodOverlay.color;
         c.a = alpha; 
         uiBloodOverlay.color = c;
@@ -89,30 +94,60 @@ public class UI_NoteReader : MonoBehaviour
     public void CloseNote()
     {
         if (typingCoroutine != null) StopCoroutine(typingCoroutine);
-        
+    
         uiPaperBackground.gameObject.SetActive(false);
         activeDecayScript = null;
 
-        // 延迟物理结算：关闭阅读器时，判定该物体是否允许被拾取
-        if (currentActiveNoteObject != null)
-        {
-            Logic_ItemPickup pickup = currentActiveNoteObject.GetComponent<Logic_ItemPickup>();
-            if (pickup != null && pickup.itemData != null)
-            {
-                if (Core_InventoryManager.Instance.AddItem(pickup.itemData))
-                {
-                    currentActiveNoteObject.SetActive(false); // 物权转移，模型消失
-                }
-            }
-            currentActiveNoteObject = null; // 清除缓存
-        }
-
-        if (playerController != null) playerController.enabled = true;
+        // 直接使用全局 raycaster，消除 CS0136 报错
         if (raycaster != null)
         {
+            if (raycaster.focusTarget != null && raycaster.focusTarget.name == "Note_MainDoor")
+            {
+                // 1. 解除焦点
+                raycaster.focusTarget = null;
+                
+                // 2. 触发独白
+                Core_MonologueManager.Instance.ShowMonologue("'Chamber of white tiles'... 'Silver eyes'...");
+                Core_MonologueManager.Instance.ShowMonologue("The bathroom mirror? I should go check the bathroom.");
+
+                // 3. 解锁卫生间交互
+                GameObject bathroomDoor = GameObject.Find("Prop_Door_Bathroom");
+                if (bathroomDoor != null) bathroomDoor.tag = "Operable";
+            }
+            
             raycaster.enabled = true;
             raycaster.currentInteractableObj = null;
         }
+
+        // 延迟物理结算：判断是否存入背包
+        if (currentActiveNoteObject != null)
+        {
+            // 强制向上溯源：无论击中哪个子物体，都能精准定位到父节点的 Pickup 脚本
+            Logic_ItemPickup pickup = currentActiveNoteObject.GetComponentInParent<Logic_ItemPickup>();
+            
+            if (pickup != null)
+            {
+                if (pickup.itemData != null)
+                {
+                    if (Core_InventoryManager.Instance.AddItem(pickup.itemData))
+                    {
+                        // 销毁带有 Pickup 脚本的根节点，完成物权转移
+                        pickup.gameObject.SetActive(false); 
+                    }
+                    else
+                    {
+                        Debug.LogWarning("【系统警告】背包已满，无法拾取！");
+                    }
+                }
+                else
+                {
+                    Debug.LogError("【物理断层】Logic_ItemPickup 存在，但未装填 ItemData 数据！");
+                }
+            }
+            currentActiveNoteObject = null;
+        }
+
+        if (playerController != null) playerController.enabled = true;
 
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
@@ -130,17 +165,8 @@ public class UI_NoteReader : MonoBehaviour
 
             if (activeDecayScript != null)
             {
-                // 1. 推进 3D 物理时间泵
                 activeDecayScript.AddReadingTime(Time.deltaTime);
-                
-                // 2. 物理同步 UI 透明度
                 SetOverlayAlpha(activeDecayScript.CurrentDecay);
-
-                // 将底层物理数据实时打印到控制台
-                if (uiBloodOverlay != null)
-                {
-                    Debug.Log($"[数据泵遥测] 目标纸条腐化值: {activeDecayScript.CurrentDecay:F3} | 实际写入UI透明度: {uiBloodOverlay.color.a:F3}");
-                }
             }
         }
     }

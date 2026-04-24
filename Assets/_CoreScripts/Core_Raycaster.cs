@@ -26,6 +26,8 @@ public class Core_Raycaster : MonoBehaviour
     private Core_InspectSystem inspectSystem;
     private UI_NoteReader noteReader;
 
+    public GameObject focusTarget; // 如果不为 null，则只能与该物体交互
+
     private void Awake()
     {
         mainCamera = GetComponent<Camera>();
@@ -62,15 +64,24 @@ public class Core_Raycaster : MonoBehaviour
         Ray ray = mainCamera.ScreenPointToRay(new Vector2(Screen.width / 2, Screen.height / 2));
         RaycastHit hit;
 
-        if (Physics.Raycast(ray, out hit, rayDistance, ~LayerMask.GetMask("Player")))
+        if (Physics.Raycast(ray, out hit, 5f, ~LayerMask.GetMask("Player")))
         {
-            // 扩大物理侦测面：追加 Pickable 标签
-            if (hit.collider.CompareTag("Inspectable") ||
-                hit.collider.CompareTag("Readable") ||
-                hit.collider.CompareTag("Operable") ||
-                hit.collider.CompareTag("Pickable")) 
+            GameObject hitObj = hit.collider.gameObject;
+
+            // 层级兼容判定
+            if (focusTarget != null)
             {
-                currentInteractableObj = hit.collider.gameObject;
+                // 判定击中的物体是否为焦点目标，或其子物体
+                if (hitObj != focusTarget && !hitObj.transform.IsChildOf(focusTarget.transform))
+                {
+                    return; // 物理阻断非焦点目标
+                }
+            }
+
+            if (hit.collider.CompareTag("Inspectable") || hit.collider.CompareTag("Readable") ||
+                hit.collider.CompareTag("Operable") || hit.collider.CompareTag("Pickable"))
+            {
+                currentInteractableObj = hitObj;
             }
         }
     }
@@ -80,11 +91,17 @@ public class Core_Raycaster : MonoBehaviour
     /// </summary>
     private void CheckClick()
     {
-        if (inspectSystem.isInspecting) return;
+        if (inspectSystem != null && inspectSystem.isInspecting) return;
 
         // --- 逻辑 A：交互与拾取 ---
         if (Input.GetMouseButtonDown(0) && currentInteractableObj != null)
         {
+            Logic_MainDoor doorLogic = currentInteractableObj.GetComponentInParent<Logic_MainDoor>();
+            if (doorLogic != null)
+            {
+                doorLogic.OnInteract();
+                return;
+            }
             // 1. 纯粹的拾取物品，不走交互，直接拿走
             if (currentInteractableObj.CompareTag("Pickable"))
             {

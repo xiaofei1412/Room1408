@@ -55,5 +55,6 @@ public class Core_LevelStart : MonoBehaviour
             Core_MonologueManager.Instance.ShowMonologue("This looks like a hotel room. How did I end up here?");
             Core_MonologueManager.Instance.ShowMonologue("I should check that main door first.");
         }
+        raycaster.focusTarget = GameObject.Find("Prop_Lock_MainEntrance");
     }
 }
