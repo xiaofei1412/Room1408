@@ -146,6 +146,14 @@ public class Core_Raycaster : MonoBehaviour
                     rotDoor.StartDrag(); 
                     return; // 物理阻断，防止同时触发其他 Operable 逻辑
                 }
+
+                // 镜子交互判定 (层级溯源)
+                Logic_MirrorInteract mirror = currentInteractableObj.GetComponentInParent<Logic_MirrorInteract>();
+                if (mirror != null)
+                {
+                    mirror.OnInteract();
+                    return; // 阻断执行
+                }
                 
                 // 原有的密码锁等逻辑继续保留
                 Logic_KeypadLock keypad = currentInteractableObj.GetComponent<Logic_KeypadLock>();

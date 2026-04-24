@@ -1,13 +1,22 @@
 using UnityEngine;
+using UnityEngine.Events;
 
 public class Logic_RotatableDoor : MonoBehaviour
 {
-    [Header("旋转设置")]
-    public float maxOpenAngle = 90f;   // 最大开启角度
-    public float sensitivity = 5f;    // 旋转灵敏度
+    [Header("旋转物理设置")]
+    public float maxOpenAngle = 90f;   // 开启的最大绝对角度
+    public bool isPullDoor = false;    // 勾选则表示向玩家方向拉（负角度）
+    public float sensitivity = 5f;    
+    public bool reverseMouse = false;  // 若发现鼠标拖拽方向与直觉相反，勾选此项反转映射
     
-    [Header("音效")]
-    public AudioClip moveSFX;         // 开门声
+    [Header("事件触发配置")]
+    [Range(0, 1)]
+    public float triggerThreshold = 0.5f; 
+    public UnityEvent OnThresholdReached; 
+    private bool hasTriggeredEvent = false;
+
+    [Header("音效组件")]
+    public AudioClip moveSFX;         
     private AudioSource audioSource;
 
     private float currentYAngle = 0f;
@@ -15,12 +24,10 @@ public class Logic_RotatableDoor : MonoBehaviour
 
     void Start()
     {
-        // 自动装配音效组件
         audioSource = GetComponent<AudioSource>();
         if (audioSource == null) audioSource = gameObject.AddComponent<AudioSource>();
     }
 
-    // 由 Core_Raycaster 在左键按下时调用
     public void StartDrag()
     {
         isInteracting = true;
@@ -38,13 +45,33 @@ public class Logic_RotatableDoor : MonoBehaviour
                 return;
             }
 
-            // 获取鼠标 X 轴增量。左移为负，-Input 为正，角度增加（即逆时针）
-            float mouseDelta = -Input.GetAxis("Mouse X") * sensitivity;
+            // 1. 获取鼠标 X 轴位移
+            float mouseDelta = Input.GetAxis("Mouse X") * sensitivity;
+            if (reverseMouse) mouseDelta = -mouseDelta;
 
-            if (Mathf.Abs(mouseDelta) > 0.01f) // 物理阈值过滤，防止细微抖动
+            // 2. 根据推拉类型执行物理钳位 (Clamp)
+            if (isPullDoor)
             {
-                currentYAngle = Mathf.Clamp(currentYAngle + mouseDelta, 0f, maxOpenAngle);
-                transform.localRotation = Quaternion.Euler(0, currentYAngle, 0);
+                // 拉门：角度向负数域延伸
+                currentYAngle += mouseDelta; 
+                currentYAngle = Mathf.Clamp(currentYAngle, -maxOpenAngle, 0f);
+            }
+            else
+            {
+                // 推门：角度向正数域延伸
+                currentYAngle -= mouseDelta; 
+                currentYAngle = Mathf.Clamp(currentYAngle, 0f, maxOpenAngle);
+            }
+
+            // 3. 驱动 3D 实体旋转
+            transform.localRotation = Quaternion.Euler(0, currentYAngle, 0);
+
+            // 4. 阈值事件遥测 (取绝对值计算进度)
+            float currentProgress = Mathf.Abs(currentYAngle) / maxOpenAngle;
+            if (!hasTriggeredEvent && currentProgress >= triggerThreshold)
+            {
+                hasTriggeredEvent = true;
+                OnThresholdReached?.Invoke();
             }
         }
     }
