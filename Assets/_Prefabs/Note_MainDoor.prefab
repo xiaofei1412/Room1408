@@ -321,7 +321,7 @@ GameObject:
   - component: {fileID: 6081007798524566190}
   - component: {fileID: 3488810572344996657}
   m_Layer: 0
-  m_Name: Prop_Note_MainDoor
+  m_Name: Note_MainDoor
   m_TagString: Readable
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

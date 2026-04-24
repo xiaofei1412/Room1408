@@ -138,7 +138,18 @@ public class Core_Raycaster : MonoBehaviour
             // 4. 机械交互（密码锁等）
             else if (currentInteractableObj.CompareTag("Operable"))
             {
-                Debug.Log("触发Operable机械交互");
+                // 尝试获取旋转门组件
+                Logic_RotatableDoor rotDoor = currentInteractableObj.GetComponentInParent<Logic_RotatableDoor>();
+                
+                if (rotDoor != null)
+                {
+                    rotDoor.StartDrag(); 
+                    return; // 物理阻断，防止同时触发其他 Operable 逻辑
+                }
+                
+                // 原有的密码锁等逻辑继续保留
+                Logic_KeypadLock keypad = currentInteractableObj.GetComponent<Logic_KeypadLock>();
+                if (keypad != null) keypad.OpenKeypad();
             }
         }
 

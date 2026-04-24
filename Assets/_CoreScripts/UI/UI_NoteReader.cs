@@ -111,7 +111,7 @@ public class UI_NoteReader : MonoBehaviour
                 Core_MonologueManager.Instance.ShowMonologue("The bathroom mirror? I should go check the bathroom.");
 
                 // 3. 解锁卫生间交互
-                GameObject bathroomDoor = GameObject.Find("Prop_Door_Bathroom");
+                GameObject bathroomDoor = GameObject.Find("Door_Bathroom");
                 if (bathroomDoor != null) bathroomDoor.tag = "Operable";
             }
             
@@ -122,29 +122,23 @@ public class UI_NoteReader : MonoBehaviour
         // 延迟物理结算：判断是否存入背包
         if (currentActiveNoteObject != null)
         {
-            // 强制向上溯源：无论击中哪个子物体，都能精准定位到父节点的 Pickup 脚本
             Logic_ItemPickup pickup = currentActiveNoteObject.GetComponentInParent<Logic_ItemPickup>();
-            
-            if (pickup != null)
+            if (pickup != null && pickup.itemData != null)
             {
-                if (pickup.itemData != null)
+                if (Core_InventoryManager.Instance.AddItem(pickup.itemData))
                 {
-                    if (Core_InventoryManager.Instance.AddItem(pickup.itemData))
+                    // 拾取成功后的单句引导
+                    if (currentActiveNoteObject.name == "Note_MainDoor")
                     {
-                        // 销毁带有 Pickup 脚本的根节点，完成物权转移
-                        pickup.gameObject.SetActive(false); 
+                        Core_MonologueManager.Instance.ShowMonologue("The bathroom... 'Silver eyes' must be there.");
+                        
+                        // 开启卫生间门交互权限
+                        GameObject bhDoor = GameObject.Find("Door_Bathroom");
+                        if (bhDoor != null) bhDoor.tag = "Operable";
                     }
-                    else
-                    {
-                        Debug.LogWarning("【系统警告】背包已满，无法拾取！");
-                    }
-                }
-                else
-                {
-                    Debug.LogError("【物理断层】Logic_ItemPickup 存在，但未装填 ItemData 数据！");
+                    pickup.gameObject.SetActive(false);
                 }
             }
-            currentActiveNoteObject = null;
         }
 
         if (playerController != null) playerController.enabled = true;
