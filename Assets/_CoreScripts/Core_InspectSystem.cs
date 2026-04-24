@@ -4,26 +4,25 @@ public class Core_InspectSystem : MonoBehaviour
 {
     [Header("检视设置")]
     public float rotateSpeed = 2f;
-    [SerializeField] private float inspectDistance = 1.5f;
+    public float inspectDistance = 1.0f; 
+    public float inspectScaleFactor = 2.0f; // 放大倍率
 
     private GameObject targetObject;
     private Vector3 originalPos;
     private Quaternion originalRot;
+    private Vector3 originalScale; // 记录原始缩放
     private Transform originalParent;
 
     public bool isInspecting = false;
-
     private Camera mainCamera;
     private Core_Raycaster raycaster;
-    // 新增：引用玩家控制器
     private Core_FirstPersonController playerController;
 
     private void Awake()
     {
         mainCamera = GetComponent<Camera>();
         raycaster = GetComponent<Core_Raycaster>();
-        // 获取玩家控制器
-        playerController = FindObjectOfType<Core_FirstPersonController>();
+        playerController = Object.FindFirstObjectByType<Core_FirstPersonController>();
     }
 
     public void StartInspect(GameObject obj)
@@ -33,48 +32,48 @@ public class Core_InspectSystem : MonoBehaviour
         targetObject = obj;
         originalPos = obj.transform.position;
         originalRot = obj.transform.rotation;
+        originalScale = obj.transform.localScale; // 记录缩放
         originalParent = obj.transform.parent;
 
+        // 物理操作：移至镜头中心并放大
         obj.transform.SetParent(null);
-        obj.transform.position = mainCamera.transform.position + mainCamera.transform.forward * inspectDistance;
+        
+        // 使用 ViewportPoint 确保绝对居中 (0.5, 0.5 是屏幕中心)
+        Vector3 centerPoint = mainCamera.ViewportToWorldPoint(new Vector3(0.5f, 0.5f, inspectDistance));
+        obj.transform.position = centerPoint;
+        obj.transform.localScale = originalScale * inspectScaleFactor;
 
         isInspecting = true;
 
-        // 禁用射线 & 完全冻结玩家（不能走、不能转视角）
-        if (raycaster != null)
-            raycaster.enabled = false;
-        if (playerController != null)
-            playerController.enabled = false;
+        if (raycaster != null) raycaster.enabled = false;
+        if (playerController != null) playerController.enabled = false;
 
         Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
     }
 
     private void Update()
     {
         if (!isInspecting || targetObject == null) return;
 
+        // 旋转逻辑保持不变
         float mouseX = Input.GetAxis("Mouse X") * rotateSpeed;
         float mouseY = Input.GetAxis("Mouse Y") * rotateSpeed;
+        targetObject.transform.Rotate(mainCamera.transform.up, -mouseX, Space.World);
+        targetObject.transform.Rotate(mainCamera.transform.right, mouseY, Space.World);
 
-        targetObject.transform.Rotate(Vector3.up, -mouseX, Space.World);
-        targetObject.transform.Rotate(Vector3.right, mouseY, Space.World);
-
-        // 右键退出
-        if (Input.GetMouseButtonDown(1))
-        {
-            StopInspect();
-        }
+        if (Input.GetMouseButtonDown(1)) StopInspect();
     }
 
     private void StopInspect()
     {
-        // 1. 先将其还原到物理世界中的原始位置，以免发生变换矩阵错误
+        // 还原所有物理属性
+        targetObject.transform.localScale = originalScale;
         targetObject.transform.position = originalPos;
         targetObject.transform.rotation = originalRot;
         targetObject.transform.SetParent(originalParent);
 
-        // 延迟物理结算：退出检视时执行拾取
-        Logic_ItemPickup pickup = targetObject.GetComponent<Logic_ItemPickup>();
+        Logic_ItemPickup pickup = targetObject.GetComponentInParent<Logic_ItemPickup>();
         if (pickup != null && pickup.itemData != null)
         {
             if (Core_InventoryManager.Instance.AddItem(pickup.itemData))
@@ -83,19 +82,9 @@ public class Core_InspectSystem : MonoBehaviour
             }
         }
 
-        // 2. 恢复射线与玩家控制
         isInspecting = false;
-        if (raycaster != null)
-        {
-            raycaster.enabled = true;
-            raycaster.currentInteractableObj = null;
-        }
-        if (playerController != null)
-            playerController.enabled = true;
-
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
-
+        if (raycaster != null) { raycaster.enabled = true; raycaster.currentInteractableObj = null; }
+        if (playerController != null) playerController.enabled = true;
         targetObject = null;
     }
 }

@@ -64,24 +64,40 @@ public class Core_Raycaster : MonoBehaviour
         Ray ray = mainCamera.ScreenPointToRay(new Vector2(Screen.width / 2, Screen.height / 2));
         RaycastHit hit;
 
-        if (Physics.Raycast(ray, out hit, 5f, ~LayerMask.GetMask("Player")))
+        // 定义严谨的物理遮罩。强行排除 Player 层 AND Ignore Raycast 层
+        int exclusionMask = ~LayerMask.GetMask("Player", "Ignore Raycast");
+
+        // 将 exclusionMask 传入射线函数
+        if (Physics.Raycast(ray, out hit, 5f, exclusionMask))
         {
             GameObject hitObj = hit.collider.gameObject;
 
-            // 层级兼容判定
-            if (focusTarget != null)
+            // 保持遥测探针，用于核验
+            Debug.Log($"【射线遥测】击中目标: {hitObj.name} | 图层: {LayerMask.LayerToName(hitObj.layer)} | 标签: {hitObj.tag}");
+
+            Transform currentTransform = hitObj.transform;
+            GameObject validInteractable = null;
+
+            while (currentTransform != null)
             {
-                // 判定击中的物体是否为焦点目标，或其子物体
-                if (hitObj != focusTarget && !hitObj.transform.IsChildOf(focusTarget.transform))
+                if (currentTransform.CompareTag("Inspectable") || 
+                    currentTransform.CompareTag("Readable") ||
+                    currentTransform.CompareTag("Operable") || 
+                    currentTransform.CompareTag("Pickable"))
                 {
-                    return; // 物理阻断非焦点目标
+                    validInteractable = currentTransform.gameObject;
+                    break; 
                 }
+                currentTransform = currentTransform.parent;
             }
 
-            if (hit.collider.CompareTag("Inspectable") || hit.collider.CompareTag("Readable") ||
-                hit.collider.CompareTag("Operable") || hit.collider.CompareTag("Pickable"))
+            if (validInteractable != null)
             {
-                currentInteractableObj = hitObj;
+                if (focusTarget != null && validInteractable != focusTarget && !validInteractable.transform.IsChildOf(focusTarget.transform))
+                {
+                    return; 
+                }
+                currentInteractableObj = validInteractable;
             }
         }
     }
@@ -138,26 +154,33 @@ public class Core_Raycaster : MonoBehaviour
             // 4. 机械交互（密码锁等）
             else if (currentInteractableObj.CompareTag("Operable"))
             {
-                // 尝试获取旋转门组件
+                // 优先级 1：旋转门 (最具体的物理动作，优先判定)
                 Logic_RotatableDoor rotDoor = currentInteractableObj.GetComponentInParent<Logic_RotatableDoor>();
-                
                 if (rotDoor != null)
                 {
-                    rotDoor.StartDrag(); 
-                    return; // 物理阻断，防止同时触发其他 Operable 逻辑
+                    rotDoor.StartDrag();
+                    return; 
                 }
 
-                // 镜子交互判定 (层级溯源)
-                Logic_MirrorInteract mirror = currentInteractableObj.GetComponentInParent<Logic_MirrorInteract>();
-                if (mirror != null)
+                // 优先级 1.5：平移物体判定 (紧跟在旋转门之后)
+                Logic_SlidingProp slidingProp = currentInteractableObj.GetComponentInParent<Logic_SlidingProp>();
+                if (slidingProp != null)
                 {
-                    mirror.OnInteract();
-                    return; // 阻断执行
+                    slidingProp.StartDrag();
+                    return; 
                 }
-                
-                // 原有的密码锁等逻辑继续保留
-                Logic_KeypadLock keypad = currentInteractableObj.GetComponent<Logic_KeypadLock>();
-                if (keypad != null) keypad.OpenKeypad();
+
+                // 优先级 2：镜子特写
+                Logic_MirrorInteract mirror = currentInteractableObj.GetComponentInParent<Logic_MirrorInteract>();
+                if (mirror != null) { mirror.OnInteract(); return; }
+
+                // 优先级 3：保险箱密码盘 (只有在 Logic_SafeInteract 脚本被勾选激活时才会响应)
+                Logic_SafeInteract safe = currentInteractableObj.GetComponentInParent<Logic_SafeInteract>();
+                if (safe != null && safe.enabled) 
+                { 
+                    safe.OnInteract(); 
+                    return; 
+                }
             }
         }
 

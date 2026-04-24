@@ -119,6 +119,22 @@ public class UI_NoteReader : MonoBehaviour
             raycaster.currentInteractableObj = null;
         }
 
+        // 针对风景画背后纸条的逻辑判定
+        if (currentActiveNoteObject.name == "Note_Painting")
+        {
+            // 推送内心独白
+            Core_MonologueManager.Instance.ShowMonologue("The hollow box with the black glass eye...");
+            Core_MonologueManager.Instance.ShowMonologue("The television. I need to turn it on.");
+
+            // 物理权限移交：解锁电视机的交互
+            GameObject tvObj = GameObject.Find("Prop_TV_Living "); 
+            if (tvObj != null) 
+            {
+                // 将电视机或其旋钮赋予 Operable 标签
+                tvObj.tag = "Operable"; 
+            }
+        }
+
         // 延迟物理结算：判断是否存入背包
         if (currentActiveNoteObject != null)
         {
