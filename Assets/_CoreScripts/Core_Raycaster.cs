@@ -59,16 +59,16 @@ public class Core_Raycaster : MonoBehaviour
     private void CastRay()
     {
         currentInteractableObj = null;
-
         Ray ray = mainCamera.ScreenPointToRay(new Vector2(Screen.width / 2, Screen.height / 2));
         RaycastHit hit;
 
-        if (Physics.Raycast(ray, out hit, 20f, ~LayerMask.GetMask("Player")))
+        if (Physics.Raycast(ray, out hit, rayDistance, ~LayerMask.GetMask("Player")))
         {
-            // 3种交互类型
+            // 扩大物理侦测面：追加 Pickable 标签
             if (hit.collider.CompareTag("Inspectable") ||
                 hit.collider.CompareTag("Readable") ||
-                hit.collider.CompareTag("Operable"))
+                hit.collider.CompareTag("Operable") ||
+                hit.collider.CompareTag("Pickable")) 
             {
                 currentInteractableObj = hit.collider.gameObject;
             }
@@ -82,28 +82,79 @@ public class Core_Raycaster : MonoBehaviour
     {
         if (inspectSystem.isInspecting) return;
 
+        // --- 逻辑 A：交互与拾取 ---
         if (Input.GetMouseButtonDown(0) && currentInteractableObj != null)
         {
-            // 1. Inspectable = 3D检视（旋转物品）
-            if (currentInteractableObj.CompareTag("Inspectable"))
+            // 1. 纯粹的拾取物品，不走交互，直接拿走
+            if (currentInteractableObj.CompareTag("Pickable"))
+            {
+                Logic_ItemPickup pickup = currentInteractableObj.GetComponent<Logic_ItemPickup>();
+                if (pickup != null && pickup.itemData != null)
+                {
+                    if (Core_InventoryManager.Instance.AddItem(pickup.itemData))
+                    {
+                        currentInteractableObj.SetActive(false);
+                    }
+                }
+            }
+            // 2. 3D检视：看完再拿
+            else if (currentInteractableObj.CompareTag("Inspectable"))
             {
                 inspectSystem.StartInspect(currentInteractableObj);
             }
-            // 2. Readable = 2D阅读（打开笔记UI）
+            // 3. 2D阅读：读完再拿
             else if (currentInteractableObj.CompareTag("Readable"))
             {
                 Logic_NoteText note = currentInteractableObj.GetComponent<Logic_NoteText>();
+                Logic_ProgressiveDecay decayScript = currentInteractableObj.GetComponent<Logic_ProgressiveDecay>();
+
                 if (note != null && noteReader != null)
                 {
-                    noteReader.DisplayNote(note.noteTitle, note.noteContent);
+                    // 必须将实体指针传入 UI
+                    noteReader.DisplayNote(note.noteTitle, note.noteContent, decayScript, currentInteractableObj);
                 }
+
+                // 理智扣除维持独立运算
+                Logic_SanityTrigger sanityTrigger = currentInteractableObj.GetComponent<Logic_SanityTrigger>();
+                if (sanityTrigger != null) sanityTrigger.TriggerSanityLoss();
             }
-            // 3. Operable = 机械交互（预留接口，给逻辑C使用）
+            // 4. 机械交互（密码锁等）
             else if (currentInteractableObj.CompareTag("Operable"))
             {
-                // 占位：后续C写门/抽屉/密码锁逻辑
                 Debug.Log("触发Operable机械交互");
             }
+        }
+
+        // --- 逻辑 B：背包物品反向投放至世界---
+        if (Input.GetMouseButtonDown(0) && currentInteractableObj == null)
+        {
+            HandleItemDrop();
+        }
+    }
+
+    private void HandleItemDrop()
+    {
+        ItemData selectedItem = Core_InventoryManager.Instance.GetSelectedItem();
+        if (selectedItem == null || selectedItem.itemPrefab == null) return;
+
+        Ray ray = mainCamera.ScreenPointToRay(new Vector2(Screen.width / 2, Screen.height / 2));
+        if (Physics.Raycast(ray, out RaycastHit hit, 5f))
+        {
+            // 物理预测：实例化 3D 模型
+            GameObject droppedObj = Instantiate(selectedItem.itemPrefab, hit.point, Quaternion.identity);
+            
+            // 防穿模修正：基于包围盒高度的一半进行 y 轴抬升
+            Collider col = droppedObj.GetComponent<Collider>();
+            if (col != null)
+            {
+                droppedObj.transform.position += hit.normal * col.bounds.extents.y;
+            }
+
+            // 从背包中物理移除该道具数据
+            int currentIdx = Core_InventoryManager.Instance.currentSelectedIndex;
+            Core_InventoryManager.Instance.inventory[currentIdx] = null;
+            Core_InventoryManager.Instance.ToggleSelection(currentIdx); // 取消高亮
+            Core_InventoryManager.Instance.UpdateInventoryUI(); // 通知 UI 刷新
         }
     }
 

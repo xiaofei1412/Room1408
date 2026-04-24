@@ -61,26 +61,21 @@ public class Logic_KeypadLock : MonoBehaviour
     /// </summary>
     public void OnSubmit()
     {
-        // 强制清洗 1：移除 TMP 特有的隐藏零宽字符 (\u200B)
-        // 强制清洗 2：Trim() 移除首尾的所有常规空格与换行符
-        string input = inputField.text.Replace("\u200B", "").Trim();
-        string target = correctPassword.Trim();
+        string input = inputField.text;
 
         // ❌ 密码错误
-        if (input != target)
+        if (input != correctPassword)
         {
-            // 输出带边界符的日志，用于物理排查是否仍有异物（如打印出 "[1408]"）
-            Debug.Log($"密码错误. 玩家输入:[{input}], 目标密码:[{target}]");
+            Debug.Log("密码错误");
 
-            // 接入全局音效管理器播放 2D UI 音效
-            if (errorSound != null && Audio_SoundManager.Instance != null)
-            {
-                Audio_SoundManager.Instance.PlaySFX2D(errorSound);
-            }
+            if (audioSource != null && errorSound != null)
+                audioSource.PlayOneShot(errorSound);
 
-            // 👉 清空输入
+            // 👉 清空输入（体验更好）
             inputField.text = "";
             inputField.ActivateInputField();
+
+            Core_SanityManager.Instance.DecreaseSanity(5); // ⭐新增
 
             return;
         }

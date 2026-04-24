@@ -1,0 +1,5 @@
+The textures and asset in this folder are for sketchfab's model viewer.
+
+You can still use them but... the models are properly organised in the zipped folder.
+
+The reason I have to do this is because Sketchfab's model viewer doesn't allow you to select different models inside the viewer.

@@ -4,8 +4,9 @@
 TagManager:
   serializedVersion: 3
   tags:
-  - Interactable
-  - PuzzleUI
+  - Inspectable
+  - Readable
+  - Operable
   layers:
   - Default
   - TransparentFX

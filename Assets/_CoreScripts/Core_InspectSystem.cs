@@ -68,12 +68,22 @@ public class Core_InspectSystem : MonoBehaviour
 
     private void StopInspect()
     {
-        // 恢复物体
+        // 1. 先将其还原到物理世界中的原始位置，以免发生变换矩阵错误
         targetObject.transform.position = originalPos;
         targetObject.transform.rotation = originalRot;
         targetObject.transform.SetParent(originalParent);
 
-        // 恢复射线 & 恢复玩家控制
+        // 延迟物理结算：退出检视时执行拾取
+        Logic_ItemPickup pickup = targetObject.GetComponent<Logic_ItemPickup>();
+        if (pickup != null && pickup.itemData != null)
+        {
+            if (Core_InventoryManager.Instance.AddItem(pickup.itemData))
+            {
+                targetObject.SetActive(false);
+            }
+        }
+
+        // 2. 恢复射线与玩家控制
         isInspecting = false;
         if (raycaster != null)
         {
@@ -83,7 +93,6 @@ public class Core_InspectSystem : MonoBehaviour
         if (playerController != null)
             playerController.enabled = true;
 
-        // 恢复鼠标锁定
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
 
