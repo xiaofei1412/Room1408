@@ -14,7 +14,7 @@ public class Core_FirstPersonController : MonoBehaviour
     private CharacterController controller;
     private Vector3 velocity;
     private float xRotation = 0f;  // 上下视角（相机）
-    private float yRotation = 0f;  // 左右视角（角色）
+    private float yRotation = 90.0f;  // 左右视角（角色）
 
     void Start()
     {
