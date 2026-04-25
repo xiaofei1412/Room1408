@@ -71,6 +71,41 @@ public class Core_InventoryManager : MonoBehaviour
         }
         return false;
     }
+
+    // 检查背包中是否包含指定 ID 或名称的物品
+    public bool HasItem(string targetID)
+    {
+        for (int i = 0; i < inventory.Length; i++)
+        {
+            // 如果你的 ItemData 脚本里定义的物品名字段叫 itemID，请将此处的 itemName 改为 itemID
+            if (inventory[i] != null && inventory[i].itemName == targetID) 
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // 消耗/移除背包中的指定物品
+    public void RemoveItem(string targetID)
+    {
+        for (int i = 0; i < inventory.Length; i++)
+        {
+            if (inventory[i] != null && inventory[i].itemName == targetID) 
+            {
+                inventory[i] = null; // 清空该槽位
+                
+                // 如果移除的正好是当前选中的物品，重置选中状态
+                if (currentSelectedIndex == i) 
+                {
+                    ToggleSelection(i); 
+                }
+                
+                OnInventoryUpdated?.Invoke(); // 触发 UI 刷新
+                return;
+            }
+        }
+    }
     
     // 强制 UI 刷新接口
     public void UpdateInventoryUI() => OnInventoryUpdated?.Invoke();
