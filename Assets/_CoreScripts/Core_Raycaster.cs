@@ -112,10 +112,21 @@ public class Core_Raycaster : MonoBehaviour
 
             if (currentInteractableObj.CompareTag("Pickable"))
             {
+                // 复合交互检测：这是地上的录音机吗？
+                Logic_CassettePlayerInteract playerInteract = currentInteractableObj.GetComponent<Logic_CassettePlayerInteract>();
+                if (playerInteract != null)
+                {
+                    // 是录音机，转交复合逻辑 (无论手上有无磁带，内部会判定)
+                    playerInteract.OnInteractWithTape();
+                    return;
+                }
+
+                // 常规拾取逻辑
                 Logic_ItemPickup pickup = currentInteractableObj.GetComponent<Logic_ItemPickup>();
                 if (pickup != null && pickup.itemData != null)
                 {
-                    if (Core_InventoryManager.Instance.AddItem(pickup.itemData)) currentInteractableObj.SetActive(false);
+                    if (Core_InventoryManager.Instance.AddItem(pickup.itemData)) 
+                        currentInteractableObj.SetActive(false);
                 }
             }
             else if (currentInteractableObj.CompareTag("Inspectable"))
@@ -165,27 +176,44 @@ public class Core_Raycaster : MonoBehaviour
 
     private void HandleItemDrop()
     {
-        ItemData selectedItem = Core_InventoryManager.Instance.GetSelectedItem();
-        if (selectedItem == null || selectedItem.itemPrefab == null) return;
+        if (Core_InventoryManager.Instance.currentSelectedIndex == -1) return;
 
-        Ray ray = mainCamera.ScreenPointToRay(new Vector2(Screen.width / 2, Screen.height / 2));
-        if (Physics.Raycast(ray, out RaycastHit hit, 5f))
+        ItemData itemToDrop = Core_InventoryManager.Instance.GetSelectedItem();
+        if (itemToDrop != null && itemToDrop.itemPrefab != null)
         {
-            // 物理预测：实例化 3D 模型
-            GameObject droppedObj = Instantiate(selectedItem.itemPrefab, hit.point, Quaternion.identity);
+            Vector3 startPos = mainCamera.transform.position;
+            Vector3 dropDirection = mainCamera.transform.forward;
             
-            // 防穿模修正：基于包围盒高度的一半进行 y 轴抬升
-            Collider col = droppedObj.GetComponent<Collider>();
-            if (col != null)
+            // 默认丢弃点：正前方 1.5 米
+            Vector3 dropPosition = startPos + dropDirection * 1.5f;
+
+            // 防穿模射线检测
+            RaycastHit hit;
+            // 探测前方 1.5 米内是否有阻挡物（忽略玩家自身）
+            if (Physics.Raycast(startPos, dropDirection, out hit, 1.5f, ~LayerMask.GetMask("Player", "Ignore Raycast")))
             {
-                droppedObj.transform.position += hit.normal * col.bounds.extents.y;
+                // 如果撞到地板或墙壁，在击中点沿着表面法线向外退回 0.1 米生成，绝对防止嵌入
+                dropPosition = hit.point + hit.normal * 0.1f; 
             }
 
-            // 从背包中物理移除该道具数据
-            int currentIdx = Core_InventoryManager.Instance.currentSelectedIndex;
-            Core_InventoryManager.Instance.inventory[currentIdx] = null;
-            Core_InventoryManager.Instance.ToggleSelection(currentIdx); // 取消高亮
-            Core_InventoryManager.Instance.UpdateInventoryUI(); // 通知 UI 刷新
+            // 实例化模型
+            GameObject droppedObj = Instantiate(itemToDrop.itemPrefab, dropPosition, Quaternion.identity);
+            droppedObj.tag = "Pickable"; 
+
+            // 灵魂注入
+            if (droppedObj.GetComponent<Collider>() == null)
+            {
+                droppedObj.AddComponent<BoxCollider>();
+            }
+
+            Logic_ItemPickup pickupScript = droppedObj.GetComponent<Logic_ItemPickup>();
+            if (pickupScript == null)
+            {
+                pickupScript = droppedObj.AddComponent<Logic_ItemPickup>();
+            }
+            pickupScript.itemData = itemToDrop;
+
+            Core_InventoryManager.Instance.RemoveItemAtIndex(Core_InventoryManager.Instance.currentSelectedIndex);
         }
     }
 
