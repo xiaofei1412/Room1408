@@ -64,20 +64,16 @@ public class Core_Raycaster : MonoBehaviour
         Ray ray = mainCamera.ScreenPointToRay(new Vector2(Screen.width / 2, Screen.height / 2));
         RaycastHit hit;
 
-        // 定义严谨的物理遮罩。强行排除 Player 层 AND Ignore Raycast 层
+        // 防遮挡遮罩：必须排斥 Player 和 Ignore Raycast
         int exclusionMask = ~LayerMask.GetMask("Player", "Ignore Raycast");
 
-        // 将 exclusionMask 传入射线函数
         if (Physics.Raycast(ray, out hit, 5f, exclusionMask))
         {
             GameObject hitObj = hit.collider.gameObject;
-
-            // 保持遥测探针，用于核验
-            Debug.Log($"【射线遥测】击中目标: {hitObj.name} | 图层: {LayerMask.LayerToName(hitObj.layer)} | 标签: {hitObj.tag}");
-
             Transform currentTransform = hitObj.transform;
             GameObject validInteractable = null;
 
+            // 向上溯源逻辑：打中子网格，能顺藤摸瓜找到父类的标签
             while (currentTransform != null)
             {
                 if (currentTransform.CompareTag("Inspectable") || 
@@ -109,94 +105,62 @@ public class Core_Raycaster : MonoBehaviour
     {
         if (inspectSystem != null && inspectSystem.isInspecting) return;
 
-        // --- 逻辑 A：交互与拾取 ---
         if (Input.GetMouseButtonDown(0) && currentInteractableObj != null)
         {
             Logic_MainDoor doorLogic = currentInteractableObj.GetComponentInParent<Logic_MainDoor>();
-            if (doorLogic != null)
-            {
-                doorLogic.OnInteract();
-                return;
-            }
-            // 1. 纯粹的拾取物品，不走交互，直接拿走
+            if (doorLogic != null) { doorLogic.OnInteract(); return; }
+
             if (currentInteractableObj.CompareTag("Pickable"))
             {
                 Logic_ItemPickup pickup = currentInteractableObj.GetComponent<Logic_ItemPickup>();
                 if (pickup != null && pickup.itemData != null)
                 {
-                    if (Core_InventoryManager.Instance.AddItem(pickup.itemData))
-                    {
-                        currentInteractableObj.SetActive(false);
-                    }
+                    if (Core_InventoryManager.Instance.AddItem(pickup.itemData)) currentInteractableObj.SetActive(false);
                 }
             }
-            // 2. 3D检视：看完再拿
             else if (currentInteractableObj.CompareTag("Inspectable"))
             {
                 inspectSystem.StartInspect(currentInteractableObj);
             }
-            // 3. 2D阅读：读完再拿
             else if (currentInteractableObj.CompareTag("Readable"))
             {
                 Logic_NoteText note = currentInteractableObj.GetComponent<Logic_NoteText>();
                 Logic_ProgressiveDecay decayScript = currentInteractableObj.GetComponent<Logic_ProgressiveDecay>();
-
                 if (note != null && noteReader != null)
-                {
-                    // 必须将实体指针传入 UI
                     noteReader.DisplayNote(note.noteTitle, note.noteContent, decayScript, currentInteractableObj);
-                }
 
-                // 理智扣除维持独立运算
                 Logic_SanityTrigger sanityTrigger = currentInteractableObj.GetComponent<Logic_SanityTrigger>();
                 if (sanityTrigger != null) sanityTrigger.TriggerSanityLoss();
             }
-            // 4. 机械交互（密码锁等）
             else if (currentInteractableObj.CompareTag("Operable"))
             {
-                // 优先级 1：旋转门 (最具体的物理动作，优先判定)
-                Logic_RotatableDoor rotDoor = currentInteractableObj.GetComponentInParent<Logic_RotatableDoor>();
-                if (rotDoor != null)
-                {
-                    rotDoor.StartDrag();
-                    return; 
-                }
-
-                // 优先级 1.5：平移物体判定 (紧跟在旋转门之后)
+                // 优先级 1：平移画框
                 Logic_SlidingProp slidingProp = currentInteractableObj.GetComponentInParent<Logic_SlidingProp>();
-                if (slidingProp != null)
-                {
-                    slidingProp.StartDrag();
-                    return; 
-                }
+                if (slidingProp != null) { slidingProp.StartDrag(); return; }
 
-                // 优先级 2：镜子特写
+                // 优先级 2：旋转门
+                Logic_RotatableDoor rotDoor = currentInteractableObj.GetComponentInParent<Logic_RotatableDoor>();
+                if (rotDoor != null) { rotDoor.StartDrag(); return; }
+
+                // 优先级 3：镜子特写
                 Logic_MirrorInteract mirror = currentInteractableObj.GetComponentInParent<Logic_MirrorInteract>();
                 if (mirror != null) { mirror.OnInteract(); return; }
 
-                // 优先级 3：保险箱密码盘 (只有在 Logic_SafeInteract 脚本被勾选激活时才会响应)
-                Logic_SafeInteract safe = currentInteractableObj.GetComponentInParent<Logic_SafeInteract>();
-                if (safe != null && safe.enabled) 
-                { 
-                    safe.OnInteract(); 
-                    return; 
-                }
-
-                // 电视机交互判定
+                // 优先级 4：电视机交互
                 Logic_TVInteract tv = currentInteractableObj.GetComponentInParent<Logic_TVInteract>();
-                if (tv != null)
-                {
-                    tv.OnInteract();
-                    return;
-                }
+                if (tv != null) { tv.OnInteract(); return; }
+
+                // 优先级 5：座钟钟面交互
+                Logic_ClockInteract clock = currentInteractableObj.GetComponentInParent<Logic_ClockInteract>();
+                if (clock != null) { clock.OnInteract(); return; }
+
+                // 优先级 6：保险箱密码盘
+                Logic_SafeInteract safe = currentInteractableObj.GetComponentInParent<Logic_SafeInteract>();
+                if (safe != null && safe.enabled) { safe.OnInteract(); return; }
             }
         }
 
-        // --- 逻辑 B：背包物品反向投放至世界---
-        if (Input.GetMouseButtonDown(0) && currentInteractableObj == null)
-        {
-            HandleItemDrop();
-        }
+        if (Input.GetMouseButtonDown(0) && currentInteractableObj == null) HandleItemDrop();
     }
 
     private void HandleItemDrop()

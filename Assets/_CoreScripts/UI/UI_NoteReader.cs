@@ -157,6 +157,21 @@ public class UI_NoteReader : MonoBehaviour
             }
         }
 
+        // 针对座钟背后纸条的逻辑判定
+        if (currentActiveNoteObject.name == "Note_Clock")
+        {
+            Core_MonologueManager.Instance.ShowMonologue("The place where the dreamer lies... The bedroom.");
+            Core_MonologueManager.Instance.ShowMonologue("The 'wooden mouths' must be the drawers next to the bed.");
+
+            // 物理权限移交 1：解锁卧室推拉门
+            GameObject bedroomDoor = GameObject.Find("SM_Door_SlidingBedroom");
+            if (bedroomDoor != null) bedroomDoor.tag = "Operable";
+
+            // 物理权限移交 2：解锁左侧抽屉
+            GameObject leftDrawer = GameObject.Find("Drawer_Left");
+            if (leftDrawer != null) leftDrawer.tag = "Operable";
+        }
+
         if (playerController != null) playerController.enabled = true;
 
         Cursor.lockState = CursorLockMode.Locked;

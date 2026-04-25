@@ -97,7 +97,11 @@ public class UI_TVTuning : MonoBehaviour
         {
             Core_MonologueManager.Instance.ShowMonologue("The static is clearing. Something is coming through.");
 
-            // 触发异象序列，不再使用原有的 TransitionToAnomaly
+            // 物理封锁：彻底剥夺电视机的交互权限，防止无限重玩
+            GameObject tvObj = GameObject.Find("Prop_TV_Living");
+            if (tvObj != null) tvObj.tag = "Untagged";
+
+            // 触发异象
             if (UI_TVAnomalySequence.Instance != null)
             {
                 UI_TVAnomalySequence.Instance.PlaySequence();
