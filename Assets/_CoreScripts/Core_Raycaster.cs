@@ -181,6 +181,14 @@ public class Core_Raycaster : MonoBehaviour
                     safe.OnInteract(); 
                     return; 
                 }
+
+                // 电视机交互判定
+                Logic_TVInteract tv = currentInteractableObj.GetComponentInParent<Logic_TVInteract>();
+                if (tv != null)
+                {
+                    tv.OnInteract();
+                    return;
+                }
             }
         }
 

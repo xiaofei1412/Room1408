@@ -127,7 +127,7 @@ public class UI_NoteReader : MonoBehaviour
             Core_MonologueManager.Instance.ShowMonologue("The television. I need to turn it on.");
 
             // 物理权限移交：解锁电视机的交互
-            GameObject tvObj = GameObject.Find("Prop_TV_Living "); 
+            GameObject tvObj = GameObject.Find("Prop_TV_Living"); 
             if (tvObj != null) 
             {
                 // 将电视机或其旋钮赋予 Operable 标签
