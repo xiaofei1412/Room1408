@@ -17,12 +17,13 @@ public class Logic_EndingACinematic : MonoBehaviour
 
     [Header("演职人员滚幕 (Credits)")]
     public RectTransform creditsTransform; 
-    public float scrollSpeed = 50f;        
-    public float rollDuration = 25f;       
+    public float scrollSpeed = 17.3f;      // 滚动速度 
+    public float rollDuration = 135f;      // 滚动持续时间
 
-    // 滚幕专属 BGM 槽位
-    [Header("音效与音乐")]
+    [Header("音效与时序卡点 (Audio Sync)")]
     public AudioClip creditsBGM; 
+    public float holdDuration = 15f;       // 滚完后的定格悬念时间
+    public float audioFadeDuration = 6f;   // 音乐变弱到消失的渐隐时间
 
     private void Start()
     {
@@ -103,24 +104,23 @@ public class Logic_EndingACinematic : MonoBehaviour
                 yield return null;
             }
             
-            // 阶段 B：悬念定格！画面静止，保留最后一行字在屏幕中央，维持 5 秒
-            yield return new WaitForSeconds(5.0f);
+            // 阶段 B：悬念定格！保留最后一行字在屏幕中央
+            yield return new WaitForSeconds(holdDuration);
         }
 
         // 7. BGM 电影级渐隐 (Audio Fade Out)
         if (Audio_SoundManager.Instance != null && Audio_SoundManager.Instance.bgmSource != null)
         {
-            float fadeOutTime = 4.0f; // 音乐用 4 秒钟慢慢变弱到没声音
             float startVol = Audio_SoundManager.Instance.bgmSource.volume;
             float fadeTimer = 0f;
 
-            while (fadeTimer < fadeOutTime)
+            while (fadeTimer < audioFadeDuration)
             {
                 fadeTimer += Time.deltaTime;
-                Audio_SoundManager.Instance.bgmSource.volume = Mathf.Lerp(startVol, 0f, fadeTimer / fadeOutTime);
+                Audio_SoundManager.Instance.bgmSource.volume = Mathf.Lerp(startVol, 0f, fadeTimer / audioFadeDuration);
                 
-                // 同时画面再次变黑，吞噬最后的字幕
-                if (blackScreen != null) blackScreen.alpha = Mathf.Lerp(0f, 1f, fadeTimer / fadeOutTime);
+                // 吞噬最后的字幕
+                if (blackScreen != null) blackScreen.alpha = Mathf.Lerp(0f, 1f, fadeTimer / audioFadeDuration);
                 
                 yield return null;
             }
@@ -129,10 +129,10 @@ public class Logic_EndingACinematic : MonoBehaviour
 
         yield return new WaitForSeconds(1.0f);
 
-        // 8. 彻底结束，清空数据，切回死亡菜单
+        // 8. 彻底结束
         PlayerPrefs.SetInt("EndingType", 0);
         PlayerPrefs.Save();
-        SceneManager.LoadScene("Scene_GameOver");
+        SceneManager.LoadScene("Scene_GameOver"); 
     }
 
     private IEnumerator FadeText(float startAlpha, float endAlpha, float duration)
