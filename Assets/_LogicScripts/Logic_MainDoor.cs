@@ -41,8 +41,8 @@ public class Logic_MainDoor : MonoBehaviour
             
             Core_MonologueManager.Instance.ShowMonologue("Wait... I saw something sliding through the crack.");
 
-            // 4. 强制焦点转移：现在全场景只能点这张纸条
-            Core_Raycaster raycaster = FindObjectOfType<Core_Raycaster>();
+            // 4. 强制焦点转移：现在全场景只能点这张纸条 (修复 Unity 6 警告)
+            Core_Raycaster raycaster = Object.FindFirstObjectByType<Core_Raycaster>();
             if (raycaster != null) raycaster.focusTarget = noteObject;
         }
     }

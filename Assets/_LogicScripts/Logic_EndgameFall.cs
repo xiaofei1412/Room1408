@@ -28,6 +28,9 @@ public class Logic_EndgameFall : MonoBehaviour
     [Header("音效")]
     public AudioClip deepBassSFX;   
     public AudioClip fallingWindSFX;
+
+    public AudioClip screamSFX;        // 初始下坠尖叫音
+    public AudioClip reverseMattressSFX; // 移开床垫的反向音 (极其惊悚)
     private AudioSource audioSource;
 
     [HideInInspector] public bool isEndingActive = false;
@@ -58,6 +61,9 @@ public class Logic_EndgameFall : MonoBehaviour
         isEndingActive = true;
         mainCamera.clearFlags = CameraClearFlags.SolidColor;
         mainCamera.backgroundColor = Color.black;
+        // 移开床垫的瞬间，立刻播放反向音！
+        if (reverseMattressSFX != null && audioSource != null)
+            audioSource.PlayOneShot(reverseMattressSFX);
 
         if (!isForced && bedFrameBottom != null) bedFrameBottom.SetActive(false);
         if (deepBassSFX != null) audioSource.PlayOneShot(deepBassSFX);
@@ -84,6 +90,11 @@ public class Logic_EndgameFall : MonoBehaviour
 
         float timer = 0f;
         float currentYOffset = 0f;
+
+        if (screamSFX != null && audioSource != null)
+            audioSource.PlayOneShot(screamSFX);
+
+        if (fallingWindSFX != null) { audioSource.clip = fallingWindSFX; audioSource.loop = true; audioSource.Play(); }
 
         while (timer < totalFallDuration)
         {

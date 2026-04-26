@@ -98,7 +98,11 @@ public class UI_MirrorCloseup : MonoBehaviour
             // 只要有点击或拖拽，立刻重置空闲计时
             idleTimer = 0f; 
             ProcessWiping();
-            if (!audioSource.isPlaying && wipeSound != null) audioSource.Play();
+            if (!audioSource.isPlaying && wipeSound != null) 
+            {
+                audioSource.pitch = Random.Range(0.85f, 1.15f); // 极其关键的微调，让摩擦声很真实
+                audioSource.Play();
+            }
         }
         else
         {

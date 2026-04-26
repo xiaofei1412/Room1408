@@ -26,6 +26,9 @@ public class UI_NoteReader : MonoBehaviour
     private Coroutine typingCoroutine;
     private string fullContent;
 
+    public AudioSource ambientSource; 
+    public AudioClip readingAmbientSFX;
+
     void Awake()
     {
         // 使用最新的寻址接口，消除 CS0618 警告
@@ -42,6 +45,8 @@ public class UI_NoteReader : MonoBehaviour
         fullContent = content;
         activeDecayScript = decayScript;
         currentActiveNoteObject = noteObj;
+
+        if (ambientSource != null && readingAmbientSFX != null) ambientSource.clip = readingAmbientSFX; ambientSource.loop = true; ambientSource.Play();
 
         // 严密的材质分流逻辑
         if (activeDecayScript != null && activeDecayScript.basePaperTexture != null)
@@ -93,6 +98,7 @@ public class UI_NoteReader : MonoBehaviour
 
     public void CloseNote()
     {
+        if (ambientSource != null) ambientSource.Stop();
         if (typingCoroutine != null) StopCoroutine(typingCoroutine);
     
         uiPaperBackground.gameObject.SetActive(false);

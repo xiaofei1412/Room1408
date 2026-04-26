@@ -1,7 +1,6 @@
 ﻿using UnityEngine;
 using UnityEngine.EventSystems;
 
-
 /// <summary>
 /// 交互射线系统：负责第一人称视角控制、射线检测可交互物体、准星显示
 /// 适配新Tag：Inspectable / Readable / Operable
@@ -16,13 +15,9 @@ public class Core_Raycaster : MonoBehaviour
     [Header("检测设置")]
     [SerializeField] private float rayDistance = 5f;
 
-    [Header("视角控制")]
-    [SerializeField] private float mouseSensitivity = 1.2f;
-
     public GameObject currentInteractableObj;
 
     private Camera mainCamera;
-    private float xRotation = 0f;
     private Core_InspectSystem inspectSystem;
     private UI_NoteReader noteReader;
 
@@ -35,7 +30,8 @@ public class Core_Raycaster : MonoBehaviour
 
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
-        noteReader = FindObjectOfType<UI_NoteReader>();
+        // 修复 Unity 6 弃用警告
+        noteReader = Object.FindFirstObjectByType<UI_NoteReader>();
     }
 
     private void OnGUI()
@@ -67,7 +63,8 @@ public class Core_Raycaster : MonoBehaviour
         // 防遮挡遮罩：必须排斥 Player 和 Ignore Raycast
         int exclusionMask = ~LayerMask.GetMask("Player", "Ignore Raycast");
 
-        if (Physics.Raycast(ray, out hit, 5f, exclusionMask))
+        // 修复变量未使用警告：应用 rayDistance
+        if (Physics.Raycast(ray, out hit, rayDistance, exclusionMask))
         {
             GameObject hitObj = hit.collider.gameObject;
             Transform currentTransform = hitObj.transform;
@@ -116,7 +113,7 @@ public class Core_Raycaster : MonoBehaviour
                 Logic_CassettePlayerInteract playerInteract = currentInteractableObj.GetComponent<Logic_CassettePlayerInteract>();
                 if (playerInteract != null)
                 {
-                    // 是录音机，转交复合逻辑 (无论手上有无磁带，内部会判定)
+                    // 是录音机，转交复合逻辑
                     playerInteract.OnInteractWithTape();
                     return;
                 }
@@ -126,7 +123,10 @@ public class Core_Raycaster : MonoBehaviour
                 if (pickup != null && pickup.itemData != null)
                 {
                     if (Core_InventoryManager.Instance.AddItem(pickup.itemData)) 
+                    {
                         currentInteractableObj.SetActive(false);
+                        if (Audio_SoundManager.Instance != null) Audio_SoundManager.Instance.PlayPickup();
+                    }
                 }
             }
             else if (currentInteractableObj.CompareTag("Inspectable"))
@@ -184,23 +184,17 @@ public class Core_Raycaster : MonoBehaviour
             Vector3 startPos = mainCamera.transform.position;
             Vector3 dropDirection = mainCamera.transform.forward;
             
-            // 默认丢弃点：正前方 1.5 米
             Vector3 dropPosition = startPos + dropDirection * 1.5f;
 
-            // 防穿模射线检测
             RaycastHit hit;
-            // 探测前方 1.5 米内是否有阻挡物（忽略玩家自身）
             if (Physics.Raycast(startPos, dropDirection, out hit, 1.5f, ~LayerMask.GetMask("Player", "Ignore Raycast")))
             {
-                // 如果撞到地板或墙壁，在击中点沿着表面法线向外退回 0.1 米生成，绝对防止嵌入
                 dropPosition = hit.point + hit.normal * 0.1f; 
             }
 
-            // 实例化模型
             GameObject droppedObj = Instantiate(itemToDrop.itemPrefab, dropPosition, Quaternion.identity);
             droppedObj.tag = "Pickable"; 
 
-            // 灵魂注入
             if (droppedObj.GetComponent<Collider>() == null)
             {
                 droppedObj.AddComponent<BoxCollider>();
@@ -214,6 +208,8 @@ public class Core_Raycaster : MonoBehaviour
             pickupScript.itemData = itemToDrop;
 
             Core_InventoryManager.Instance.RemoveItemAtIndex(Core_InventoryManager.Instance.currentSelectedIndex);
+            
+            if (Audio_SoundManager.Instance != null) Audio_SoundManager.Instance.PlayDrop();
         }
     }
 

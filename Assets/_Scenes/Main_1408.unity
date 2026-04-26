@@ -2446,6 +2446,8 @@ MonoBehaviour:
   blackScreenCanvasGroup: {fileID: 227965663}
   deepBassSFX: {fileID: 0}
   fallingWindSFX: {fileID: 0}
+  screamSFX: {fileID: 8300000, guid: a4bc1f94a309fa3448d177d885a88dd6, type: 3}
+  reverseMattressSFX: {fileID: 8300000, guid: 2f8e78f732f973747abac680e59f7b28, type: 3}
   isEndingActive: 0
 --- !u!1 &487106023
 GameObject:
@@ -2885,6 +2887,7 @@ GameObject:
   - component: {fileID: 536994278}
   - component: {fileID: 536994277}
   - component: {fileID: 536994276}
+  - component: {fileID: 536994281}
   m_Layer: 5
   m_Name: UI_ReadingCanvas
   m_TagString: Untagged
@@ -2910,6 +2913,8 @@ MonoBehaviour:
   uiPaperBackground: {fileID: 512971015}
   defaultCleanPaper: {fileID: 2800000, guid: c87d72a6e3e1f7a46a1df9abf377a609, type: 3}
   typingSpeed: 0.05
+  ambientSource: {fileID: 536994281}
+  readingAmbientSFX: {fileID: 8300000, guid: aff3735d21652034eac4b2cdb20a1754, type: 3}
 --- !u!114 &536994277
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2993,6 +2998,103 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
+--- !u!82 &536994281
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 536994275}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
+  m_PlayOnAwake: 1
+  m_Volume: 1
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!1 &573158132
 GameObject:
   m_ObjectHideFlags: 0
@@ -6097,6 +6199,9 @@ MonoBehaviour:
   gravity: -9.81
   mouseSensitivity: 2
   playerCamera: {fileID: 330585546}
+  footstepSounds:
+  - {fileID: 8300000, guid: 39791a8505bb9624898ebc7033734595, type: 3}
+  stepInterval: 0.6
 --- !u!143 &1122502491
 CharacterController:
   m_ObjectHideFlags: 0
@@ -7236,10 +7341,10 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 31.85
+  m_fontSize: 24
   m_fontSizeBase: 24
   m_fontWeight: 400
-  m_enableAutoSizing: 1
+  m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
   m_fontStyle: 0
@@ -9183,13 +9288,13 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 36
-  m_fontSizeBase: 36
+  m_fontSize: 72
+  m_fontSizeBase: 72
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 0
+  m_fontStyle: 1
   m_HorizontalAlignment: 1
   m_VerticalAlignment: 512
   m_textAlignment: 65535
@@ -9225,7 +9330,7 @@ MonoBehaviour:
   m_margin: {x: 0, y: 0, z: 0, w: 0}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
-  m_hasFontAssetChanged: 1
+  m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
 --- !u!1 &1606447858
@@ -9618,6 +9723,20 @@ MonoBehaviour:
   bgmSource: {fileID: 0}
   sfxSource2D: {fileID: 0}
   testBGM: {fileID: 8300000, guid: cb11beaa3410d2440ba78e271eb42ad0, type: 3}
+  breathingSource: {fileID: 0}
+  horrorAmbientSource: {fileID: 0}
+  heavyBreathingSFX: {fileID: 8300000, guid: 0a81fe457f8b1784c99e5cfc91b64341, type: 3}
+  randomHorrorSFX:
+  - {fileID: 8300000, guid: 8d751c06c82ce544586e57c1b7ee9da2, type: 3}
+  - {fileID: 8300000, guid: 7a26932fd8fbe3e4a89e1cddccfcbdef, type: 3}
+  - {fileID: 8300000, guid: 1d64afc3aff40504f8a1f17feb246860, type: 3}
+  - {fileID: 8300000, guid: 64796051742f98c45bf9c423c8953ec8, type: 3}
+  - {fileID: 8300000, guid: 63c4e14fa9020514f83d54a32d4dafd8, type: 3}
+  - {fileID: 8300000, guid: cf3a2976c247f4b46979499dd6cb6842, type: 3}
+  minRandomDelay: 5
+  maxRandomDelay: 15
+  pickupSFX: {fileID: 8300000, guid: 3ee5035a44043c94a94fd021da7aa167, type: 3}
+  dropSFX: {fileID: 8300000, guid: 1a3dca5347ea5fb43bc0aad67ff7f71e, type: 3}
   bgmVolume: 0.6
   sfxVolume: 1
 --- !u!4 &1625251636
@@ -9841,10 +9960,10 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 41.7
+  m_fontSize: 24
   m_fontSizeBase: 24
   m_fontWeight: 400
-  m_enableAutoSizing: 1
+  m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
   m_fontStyle: 0
@@ -10373,7 +10492,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 1}
   m_AnchorMax: {x: 0.5, y: 1}
   m_AnchoredPosition: {x: 0, y: -50}
-  m_SizeDelta: {x: 400, y: 100}
+  m_SizeDelta: {x: 1200, y: 100}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!222 &1748490130
 CanvasRenderer:
@@ -10430,13 +10549,13 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 48
-  m_fontSizeBase: 48
+  m_fontSize: 72
+  m_fontSizeBase: 72
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 0
+  m_fontStyle: 1
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 256
   m_textAlignment: 65535
@@ -10472,7 +10591,7 @@ MonoBehaviour:
   m_margin: {x: 0, y: 0, z: 0, w: 0}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
-  m_hasFontAssetChanged: 1
+  m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
 --- !u!1 &1773277841
@@ -10684,10 +10803,6 @@ MonoBehaviour:
   blackScreenCanvasGroup: {fileID: 1116643839}
   blackScreenHoldTime: 2
   fadeOutDuration: 4
-  endingAWakeUpPoint: {fileID: 676486246}
-  keyPrefab: {fileID: 3520176373291305445, guid: 0cd7809053f030c4d9a6997c8bc2f528, type: 3}
-  endingAKeyPoint: {fileID: 1181305899}
-  mainCamera: {fileID: 330585545}
 --- !u!114 &1778074915
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -12074,7 +12189,7 @@ MonoBehaviour:
   anomalyText: {fileID: 918530795}
   staticBackground: {fileID: 1197122452}
   tvAudioSource: {fileID: 0}
-  loudStaticSFX: {fileID: 0}
+  loudStaticSFX: {fileID: 8300000, guid: 17d4712957f45d34a9a763da9af300d1, type: 3}
   clockChimeSFX: {fileID: 0}
 --- !u!1 &2036341366
 GameObject:
@@ -17171,9 +17286,9 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
-  slideSFX: {fileID: 0}
-  lockedSFX: {fileID: 0}
-  unlockSFX: {fileID: 0}
+  slideSFX: {fileID: 8300000, guid: 1b6633cc10f6d0247b8989b1c0047b09, type: 3}
+  lockedSFX: {fileID: 8300000, guid: c2d967b1d329c5843a77184cd8038247, type: 3}
+  unlockSFX: {fileID: 8300000, guid: 182e6308460996b46927055bfa684a7c, type: 3}
 --- !u!114 &4633505006519262616
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -17629,6 +17744,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: -180
       objectReference: {fileID: 0}
+    - target: {fileID: 3952292589335481647, guid: bde5a2c1794d6fc4e82df713e9311dcd, type: 3}
+      propertyPath: tapePlaySFX
+      value: 
+      objectReference: {fileID: 8300000, guid: 3d88a4bff6ce7b34ba387367b9a3b4a7, type: 3}
     - target: {fileID: 5525620485008474083, guid: bde5a2c1794d6fc4e82df713e9311dcd, type: 3}
       propertyPath: m_Name
       value: Prop_CassettePlayer
@@ -18985,9 +19104,9 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
-  slideSFX: {fileID: 0}
-  lockedSFX: {fileID: 0}
-  unlockSFX: {fileID: 0}
+  slideSFX: {fileID: 8300000, guid: 1b6633cc10f6d0247b8989b1c0047b09, type: 3}
+  lockedSFX: {fileID: 8300000, guid: c2d967b1d329c5843a77184cd8038247, type: 3}
+  unlockSFX: {fileID: 8300000, guid: 182e6308460996b46927055bfa684a7c, type: 3}
 --- !u!114 &6343344457100206543
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -20584,9 +20703,9 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
-  slideSFX: {fileID: 0}
-  lockedSFX: {fileID: 0}
-  unlockSFX: {fileID: 0}
+  slideSFX: {fileID: 8300000, guid: 1b6633cc10f6d0247b8989b1c0047b09, type: 3}
+  lockedSFX: {fileID: 8300000, guid: c2d967b1d329c5843a77184cd8038247, type: 3}
+  unlockSFX: {fileID: 8300000, guid: 182e6308460996b46927055bfa684a7c, type: 3}
 --- !u!65 &7915401602580123836
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -20965,9 +21084,9 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
-  slideSFX: {fileID: 0}
-  lockedSFX: {fileID: 0}
-  unlockSFX: {fileID: 0}
+  slideSFX: {fileID: 8300000, guid: 1b6633cc10f6d0247b8989b1c0047b09, type: 3}
+  lockedSFX: {fileID: 8300000, guid: c2d967b1d329c5843a77184cd8038247, type: 3}
+  unlockSFX: {fileID: 8300000, guid: 182e6308460996b46927055bfa684a7c, type: 3}
 --- !u!114 &8265864829216945436
 MonoBehaviour:
   m_ObjectHideFlags: 0

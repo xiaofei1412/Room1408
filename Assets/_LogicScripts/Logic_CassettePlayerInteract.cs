@@ -6,6 +6,7 @@ public class Logic_CassettePlayerInteract : MonoBehaviour
     private bool hasTapePlayed = false;
     private AudioSource audioSource;
     public AudioClip tapePlaySFX; // 磁带插入并播放的诡异音效
+    public AudioClip whisperSFX;
 
     private void Awake()
     {
@@ -29,6 +30,7 @@ public class Logic_CassettePlayerInteract : MonoBehaviour
 
             // 3. 播放音效与独白
             if (tapePlaySFX != null) audioSource.PlayOneShot(tapePlaySFX);
+            if (whisperSFX != null) audioSource.PlayOneShot(whisperSFX); // 播放单次耳语
             Core_MonologueManager.Instance.ShowMonologue("The tape clicked into place. A voice... raspy and cold.");
 
             // 4. 触发终局演出序列

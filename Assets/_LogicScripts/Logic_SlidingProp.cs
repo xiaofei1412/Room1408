@@ -32,6 +32,8 @@ public class Logic_SlidingProp : MonoBehaviour
     public AudioClip unlockSFX;        
     private AudioSource audioSource;
 
+    public AudioClip openCloseImpactSFX;
+
     private float currentOffset = 0f;
     private bool isInteracting = false;
     private Vector3 initialLocalPos;
@@ -47,6 +49,7 @@ public class Logic_SlidingProp : MonoBehaviour
 
     public void StartDrag()
     {
+        if (openCloseImpactSFX != null) audioSource.PlayOneShot(openCloseImpactSFX);
         if (isLocked)
         {
             if (Core_InventoryManager.Instance.HasItem(requiredItemID))
@@ -78,6 +81,7 @@ public class Logic_SlidingProp : MonoBehaviour
         {
             if (Input.GetMouseButtonUp(0))
             {
+                if (openCloseImpactSFX != null) audioSource.PlayOneShot(openCloseImpactSFX);
                 isInteracting = false;
                 if (audioSource.isPlaying) audioSource.Stop();
                 return;

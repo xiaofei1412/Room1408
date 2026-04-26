@@ -17,6 +17,8 @@ public class UI_TVTuning : MonoBehaviour
     [Header("音效阵列")]
     public AudioClip staticNoiseSFX;      // 持续的背景白噪音
     public AudioClip switchClickSFX;      // 旋钮咔哒声
+    public AudioClip correctSFX;          // 密码正确的音效
+    public AudioClip errorSFX;            // 密码错误的音效
     private AudioSource audioSource;
 
     private int currentChannel = 0;
@@ -57,16 +59,13 @@ public class UI_TVTuning : MonoBehaviour
         }
     }
 
-    // 细调接口：供左下(-1)和右下(+1)按钮调用
     public void FineTune(int amount)
     {
         ApplyChannelChange(amount);
     }
 
-    // 粗调接口更新：接收来自齿轮拖拽的连续步数 (steps)
     public void CoarseTune(int steps)
     {
-        // 每一步等于配置的幅度 (如 10)
         ApplyChannelChange(steps * coarseTuneAmount);
     }
 
@@ -90,11 +89,12 @@ public class UI_TVTuning : MonoBehaviour
         channelDisplay.text = currentChannel.ToString("D4"); 
     }
 
-    // 提交接口
     public void OnSubmit()
     {
         if (currentChannel == targetChannel)
         {
+            if (correctSFX != null) audioSource.PlayOneShot(correctSFX);
+
             Core_MonologueManager.Instance.ShowMonologue("The static is clearing. Something is coming through.");
 
             // 物理封锁：彻底剥夺电视机的交互权限，防止无限重玩
@@ -109,6 +109,8 @@ public class UI_TVTuning : MonoBehaviour
         }
         else
         {
+            if (errorSFX != null) audioSource.PlayOneShot(errorSFX);
+
             Core_SanityManager.Instance.DecreaseSanity(5);
             Core_MonologueManager.Instance.ShowMonologue("Just white noise... This isn't the right frequency.");
         }
