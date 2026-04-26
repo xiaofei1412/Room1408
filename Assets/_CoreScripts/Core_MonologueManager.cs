@@ -9,32 +9,54 @@ public class Core_MonologueManager : MonoBehaviour
 
     [Header("UI 绑定")]
     public TextMeshProUGUI monologueText;
-    public CanvasGroup textCanvasGroup; // 用于控制透明度渐变
+    public CanvasGroup textCanvasGroup; 
 
     [Header("时间物理参数")]
-    public float fadeDuration = 0.5f;   // 渐入渐出所需秒数
-    public float baseDisplayTime = 2.0f; // 基础停留秒数
-    public float timePerCharacter = 0.1f; // 根据字数动态延长的秒数
+    public float fadeDuration = 0.5f;   
+    public float baseDisplayTime = 2.0f; 
+    public float timePerCharacter = 0.1f; 
 
     private Queue<string> monologueQueue = new Queue<string>();
     private bool isDisplaying = false;
 
     private void Awake()
     {
-        if (Instance == null) Instance = this;
-        else Destroy(gameObject);
+        Instance = this; 
+        isDisplaying = false;
+        monologueQueue.Clear();
 
-        // 初始物理状态强制隐藏
+        // 初始态净化：彻底消灭开局的 "New Text" 占位符穿帮
+        if (monologueText != null) monologueText.text = "";
         if (textCanvasGroup != null) textCanvasGroup.alpha = 0f;
     }
 
     // 外部数据推入接口
     public void ShowMonologue(string text)
     {
+        // 终极防御机制：如果发现 UI 因为场景重载被销毁 (MissingReferenceException)，则动态寻回它！
+        if (textCanvasGroup == null || monologueText == null)
+        {
+            // 通过 GameObject 的名字在当前活跃场景中强行寻找幸存的 UI
+            GameObject uiObj = GameObject.Find("UI_MonologueText"); 
+            if (uiObj != null)
+            {
+                textCanvasGroup = uiObj.GetComponent<CanvasGroup>();
+                monologueText = uiObj.GetComponent<TextMeshProUGUI>();
+                
+                // 找到后立刻净化防穿帮
+                monologueText.text = "";
+                textCanvasGroup.alpha = 0f;
+            }
+            else
+            {
+                Debug.LogWarning("无法找到 UI_MonologueText，请检查它是否改名了！独白将被跳过。");
+                return;
+            }
+        }
+
         monologueQueue.Enqueue(text);
         
-        // 如果当前没有在播放，则启动渲染泵
-        if (!isDisplaying)
+        if (!isDisplaying && gameObject.activeInHierarchy)
         {
             StartCoroutine(DisplayRoutine());
         }
@@ -46,39 +68,40 @@ public class Core_MonologueManager : MonoBehaviour
 
         while (monologueQueue.Count > 0)
         {
-            // 从队列头部抽取数据
             string currentLine = monologueQueue.Dequeue();
-            monologueText.text = currentLine;
+            
+            // 每次播放前进行防御性二次检查
+            if (monologueText == null || textCanvasGroup == null) break;
 
-            // 计算该句子的物理停留时间
+            monologueText.text = currentLine;
             float displayDuration = baseDisplayTime + (currentLine.Length * timePerCharacter);
 
-            // 1. Alpha 渐入
             yield return StartCoroutine(FadeCanvasGroup(0f, 1f, fadeDuration));
-
-            // 2. 悬停展示
             yield return new WaitForSeconds(displayDuration);
-
-            // 3. Alpha 渐出
             yield return StartCoroutine(FadeCanvasGroup(1f, 0f, fadeDuration));
 
-            // 句与句之间的微小物理呼吸间隔
             yield return new WaitForSeconds(0.2f);
         }
 
         isDisplaying = false;
     }
 
-    // 底层线性透明度插值发生器
+    // 底层线性透明度插值发生器 (防闪退版)
     private IEnumerator FadeCanvasGroup(float startAlpha, float endAlpha, float duration)
     {
+        if (textCanvasGroup == null) yield break;
+
         float elapsed = 0f;
         while (elapsed < duration)
         {
+            // 防止在渐变的中途，UI 突然被销毁导致报错
+            if (textCanvasGroup == null) yield break; 
+            
             elapsed += Time.deltaTime;
             textCanvasGroup.alpha = Mathf.Lerp(startAlpha, endAlpha, elapsed / duration);
             yield return null;
         }
-        textCanvasGroup.alpha = endAlpha;
+        
+        if (textCanvasGroup != null) textCanvasGroup.alpha = endAlpha;
     }
 }

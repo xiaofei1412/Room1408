@@ -16,10 +16,8 @@ public class Core_InventoryManager : MonoBehaviour
 
     private void Awake()
     {
-        if (Instance == null) Instance = this;
-        else Destroy(gameObject);
-
-        inventory = new ItemData[maxSlots];
+        Instance = this;
+        inventory = new ItemData[maxSlots]; // 保留初始化数组的逻辑
     }
 
     private void Update()

@@ -35,11 +35,10 @@ public class Logic_StateManager : MonoBehaviour
 
     private void Awake()
     {
-        // 单例初始化
+        // 移除了 DontDestroyOnLoad，让它随着场景重载正常销毁，切断污染源！
         if (Instance == null)
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject); // 可选：跨场景
         }
         else
         {

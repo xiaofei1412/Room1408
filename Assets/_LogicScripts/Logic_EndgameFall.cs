@@ -1,9 +1,11 @@
 using UnityEngine;
 using System.Collections;
-using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class Logic_EndgameFall : MonoBehaviour
 {
+    public static Logic_EndgameFall Instance;
+
     [Header("现实剥离目标")]
     public GameObject bedFrameBottom; 
     public Transform tunnelCenter;    
@@ -12,30 +14,28 @@ public class Logic_EndgameFall : MonoBehaviour
     public GameObject playerObj;
     public Camera mainCamera;
     
-    [Header("无限坠落与雾效参数")]
+    [Header("坠落参数")]
     public float gravityAcceleration = 15f; 
     public float maxFallSpeed = 60f;        
     public float targetFOV = 120f;          
     public float fovChangeSpeed = 15f;
-    
-    [Tooltip("当玩家下落超过这个距离时，瞬间传送回起点 (制造无限循环)")]
     public float loopDistance = 30f; 
-    [Tooltip("整个深渊坠落演出的总时长 (秒)")]
     public float totalFallDuration = 12f;
 
     [Header("终局黑屏 UI")]
-    public CanvasGroup blackScreenCanvasGroup; // 用于最后淡出至死寂
+    public CanvasGroup blackScreenCanvasGroup; 
 
     [Header("音效")]
     public AudioClip deepBassSFX;   
     public AudioClip fallingWindSFX;
     private AudioSource audioSource;
 
-    private bool isFalling = false;
+    [HideInInspector] public bool isEndingActive = false;
     private float currentSpeed = 0f;
 
     private void Awake()
     {
+        if (Instance == null) Instance = this;
         audioSource = gameObject.AddComponent<AudioSource>();
         if (playerObj == null) playerObj = GameObject.FindGameObjectWithTag("Player");
         if (mainCamera == null && playerObj != null) mainCamera = playerObj.GetComponentInChildren<Camera>();
@@ -43,110 +43,124 @@ public class Logic_EndgameFall : MonoBehaviour
 
     public void TriggerAbyssFall()
     {
-        if (isFalling) return;
-        StartCoroutine(FallSequence());
+        if (isEndingActive) return;
+        StartCoroutine(FallSequence(false));
     }
 
-    private IEnumerator FallSequence()
+    public void TriggerForcedFall()
     {
-        isFalling = true;
+        if (isEndingActive) return;
+        StartCoroutine(FallSequence(true));
+    }
 
-        // 彻底抹除现实光效，强行将相机底色设为纯黑，消灭青色闪烁
+    private IEnumerator FallSequence(bool isForced)
+    {
+        isEndingActive = true;
         mainCamera.clearFlags = CameraClearFlags.SolidColor;
         mainCamera.backgroundColor = Color.black;
 
-        if (bedFrameBottom != null) bedFrameBottom.SetActive(false);
+        if (!isForced && bedFrameBottom != null) bedFrameBottom.SetActive(false);
         if (deepBassSFX != null) audioSource.PlayOneShot(deepBassSFX);
 
-        // 剥夺权限
+        Core_Raycaster raycaster = Object.FindFirstObjectByType<Core_Raycaster>();
+        if (raycaster != null) raycaster.enabled = false;
+        Core_InspectSystem inspect = Object.FindFirstObjectByType<Core_InspectSystem>();
+        if (inspect != null) { inspect.isInspecting = false; inspect.enabled = false; }
         if (playerObj.GetComponent<Core_FirstPersonController>() != null) playerObj.GetComponent<Core_FirstPersonController>().enabled = false;
         if (playerObj.GetComponent<CharacterController>() != null) playerObj.GetComponent<CharacterController>().enabled = false;
-        if (playerObj.GetComponent<Collider>() != null) playerObj.GetComponent<Collider>().enabled = false;
 
-        // 对齐中心点
         Vector3 startPos = playerObj.transform.position;
-        if (tunnelCenter != null)
-        {
-            playerObj.transform.position = new Vector3(tunnelCenter.position.x, startPos.y, tunnelCenter.position.z);
-        }
+        if (tunnelCenter != null) playerObj.transform.position = new Vector3(tunnelCenter.position.x, startPos.y, tunnelCenter.position.z);
 
-        if (fallingWindSFX != null)
-        {
-            audioSource.clip = fallingWindSFX;
-            audioSource.loop = true;
-            audioSource.Play();
-        }
+        if (fallingWindSFX != null) { audioSource.clip = fallingWindSFX; audioSource.loop = true; audioSource.Play(); }
 
         Quaternion startRot = mainCamera.transform.localRotation;
         Quaternion targetRot = Quaternion.Euler(90f, startRot.eulerAngles.y, 0f);
 
-        // 接管渲染引擎：开启纯黑色的深渊雾效
-        bool originalFogState = RenderSettings.fog;
         RenderSettings.fog = true;
         RenderSettings.fogColor = Color.black;
         RenderSettings.fogMode = FogMode.Exponential;
         RenderSettings.fogDensity = 0.01f;
 
         float timer = 0f;
-        float currentYOffset = 0f; // 记录当前循环周期内的下落位移
+        float currentYOffset = 0f;
 
-        // 坠落循环演出
         while (timer < totalFallDuration)
         {
             timer += Time.deltaTime;
-
             currentSpeed += gravityAcceleration * Time.deltaTime;
             currentSpeed = Mathf.Min(currentSpeed, maxFallSpeed);
+            playerObj.transform.Translate(Vector3.down * currentSpeed * Time.deltaTime, Space.World);
+            currentYOffset += currentSpeed * Time.deltaTime;
 
-            float dropDelta = currentSpeed * Time.deltaTime;
-            playerObj.transform.Translate(Vector3.down * dropDelta, Space.World);
-            currentYOffset += dropDelta;
-
-            // 无限空间循环的核心魔术：如果掉得太深，瞬间拉回起点！
             if (currentYOffset >= loopDistance)
             {
                 playerObj.transform.position += new Vector3(0, loopDistance, 0);
-                currentYOffset -= loopDistance; // 重置偏移量，做到无缝衔接
+                currentYOffset -= loopDistance; 
             }
 
-            // 视角与 FOV 动态变化
             mainCamera.transform.localRotation = Quaternion.Slerp(mainCamera.transform.localRotation, targetRot, Time.deltaTime * 3f);
             if (mainCamera.fieldOfView < targetFOV) mainCamera.fieldOfView += fovChangeSpeed * Time.deltaTime;
-
-            // 深渊吞噬：随着时间推移，黑色雾气越来越浓，彻底遮蔽底部的光线和穿帮边缘
             RenderSettings.fogDensity = Mathf.Lerp(0.01f, 0.4f, timer / totalFallDuration);
-
             yield return null;
         }
 
-        // 演出结束：切入死寂
-        yield return StartCoroutine(FadeToBlack());
+        if (Logic_EndingText.Instance != null) Logic_EndingText.Instance.ClearText();
+
+        yield return StartCoroutine(FadeToBlack(2.0f));
+
+        int finalSanity = Core_SanityManager.Instance != null ? Core_SanityManager.Instance.currentSanity : 100;
+
+        // 跨场景前，关闭 BGM，防止被带入结局场景
+        if (Audio_SoundManager.Instance != null) Audio_SoundManager.Instance.StopBGM();
+
+        // 直接加载对应的物理场景
+        if (isForced || finalSanity < 40)
+        {
+            Debug.Log("【结局 C】进入死亡场景");
+            // 这里不需要写入 PlayerPrefs，因为是直接 Game Over
+            SceneManager.LoadScene("Scene_GameOver"); 
+        }
+        else if (finalSanity > 70)
+        {
+            Debug.Log("【结局 A】进入苏醒运镜场景");
+            SceneManager.LoadScene("Scene_EndingA");
+        }
+        else
+        {
+            Debug.Log("【结局 B】重载主场景，开启二周目");
+            PlayerPrefs.SetInt("EndingType", 2); // 写入 2，告诉主场景这是二周目
+            PlayerPrefs.Save();
+            SceneManager.LoadScene("Main_1408"); // 请确保这里是你的主场景准确名称
+        }
     }
 
-    private IEnumerator FadeToBlack()
+    // 代码模拟手动重启 (Memory Wipe)
+    private void SimulateHardRestart(int endingType)
     {
-        // 风声渐弱
+        PlayerPrefs.SetInt("EndingType", endingType);
+        PlayerPrefs.Save();
+
+        // 强行砸碎所有单例的静态引用，消除引擎重载时的幽灵污染
+        Core_MonologueManager.Instance = null;
+        Core_InventoryManager.Instance = null;
+        Core_SanityManager.Instance = null;
+        Instance = null;
+
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+    }
+
+    private IEnumerator FadeToBlack(float fadeTime)
+    {
         float startVolume = audioSource.volume;
         float fadeTimer = 0f;
-        float fadeTime = 2.0f;
-
         while (fadeTimer < fadeTime)
         {
-            fadeTimer += Time.deltaTime;
+            fadeTimer += Time.unscaledDeltaTime;
             audioSource.volume = Mathf.Lerp(startVolume, 0f, fadeTimer / fadeTime);
-            
-            // 屏幕黑场 UI 渐显
-            if (blackScreenCanvasGroup != null)
-            {
-                blackScreenCanvasGroup.alpha = Mathf.Lerp(0f, 1f, fadeTimer / fadeTime);
-            }
+            if (blackScreenCanvasGroup != null) blackScreenCanvasGroup.alpha = Mathf.Lerp(0f, 1f, fadeTimer / fadeTime);
             yield return null;
         }
-
         audioSource.Stop();
-        Debug.Log("【游戏通关】玩家已被深渊彻底吞噬，可在此处加载制作人员名单 (Credits)。");
-        
-        // 可选：在此处加载结束场景
-        // UnityEngine.SceneManagement.SceneManager.LoadScene("EndCredits");
     }
 }

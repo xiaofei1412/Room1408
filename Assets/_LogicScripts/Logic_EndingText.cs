@@ -28,4 +28,13 @@ public class Logic_EndingText : MonoBehaviour
             yield return new WaitForSeconds(typingSpeed);
         }
     }
+
+    public void ClearText()
+    {
+        if (bloodText != null)
+        {
+            bloodText.text = "";
+        }
+        gameObject.SetActive(false); // 直接关闭整个面板
+    }
 }
