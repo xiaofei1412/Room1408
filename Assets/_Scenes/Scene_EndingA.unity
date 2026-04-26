@@ -893,6 +893,7 @@ MonoBehaviour:
   slideSFX: {fileID: 0}
   lockedSFX: {fileID: 0}
   unlockSFX: {fileID: 0}
+  openCloseImpactSFX: {fileID: 0}
 --- !u!65 &160728417
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -1575,6 +1576,7 @@ MonoBehaviour:
   slideSFX: {fileID: 0}
   lockedSFX: {fileID: 0}
   unlockSFX: {fileID: 0}
+  openCloseImpactSFX: {fileID: 0}
 --- !u!114 &304197810
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1801,12 +1803,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0cd44c1031e13a943bb63640046fad76, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.CanvasScaler
-  m_UiScaleMode: 0
+  m_UiScaleMode: 1
   m_ReferencePixelsPerUnit: 100
   m_ScaleFactor: 1
-  m_ReferenceResolution: {x: 800, y: 600}
+  m_ReferenceResolution: {x: 1920, y: 1080}
   m_ScreenMatchMode: 0
-  m_MatchWidthOrHeight: 0
+  m_MatchWidthOrHeight: 0.5
   m_PhysicalUnit: 3
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96
@@ -1970,6 +1972,7 @@ MonoBehaviour:
   slideSFX: {fileID: 0}
   lockedSFX: {fileID: 0}
   unlockSFX: {fileID: 0}
+  openCloseImpactSFX: {fileID: 0}
 --- !u!23 &399666301
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -2776,6 +2779,7 @@ MonoBehaviour:
   slideSFX: {fileID: 0}
   lockedSFX: {fileID: 0}
   unlockSFX: {fileID: 0}
+  openCloseImpactSFX: {fileID: 0}
 --- !u!114 &473444328
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3275,11 +3279,11 @@ RectTransform:
   - {fileID: 724072574}
   m_Father: {fileID: 398686103}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: -2170}
-  m_SizeDelta: {x: 0, y: 0}
-  m_Pivot: {x: 0.5, y: 0.5}
+  m_AnchorMin: {x: 0.5, y: 0}
+  m_AnchorMax: {x: 0.5, y: 0}
+  m_AnchoredPosition: {x: 0, y: -1800}
+  m_SizeDelta: {x: 1920, y: 1080}
+  m_Pivot: {x: 0.5, y: 0}
 --- !u!1 &623578589
 GameObject:
   m_ObjectHideFlags: 0
@@ -3555,7 +3559,7 @@ MonoBehaviour:
   pullDistance: 2.5
   pullDuration: 8
   creditsTransform: {fileID: 588861554}
-  scrollSpeed: 17.3
+  scrollSpeed: 18
   rollDuration: 135
   creditsBGM: {fileID: 8300000, guid: a0996e7b79cb0dc40bc8bf49df4f19f8, type: 3}
   holdDuration: 15
@@ -3889,6 +3893,7 @@ MonoBehaviour:
   slideSFX: {fileID: 0}
   lockedSFX: {fileID: 0}
   unlockSFX: {fileID: 0}
+  openCloseImpactSFX: {fileID: 0}
 --- !u!64 &730444163
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -5842,6 +5847,8 @@ MonoBehaviour:
   blackScreenCanvasGroup: {fileID: 0}
   deepBassSFX: {fileID: 0}
   fallingWindSFX: {fileID: 0}
+  screamSFX: {fileID: 0}
+  reverseMattressSFX: {fileID: 0}
   isEndingActive: 0
 --- !u!4 &1433637424
 Transform:
@@ -6728,6 +6735,7 @@ MonoBehaviour:
   slideSFX: {fileID: 0}
   lockedSFX: {fileID: 0}
   unlockSFX: {fileID: 0}
+  openCloseImpactSFX: {fileID: 0}
 --- !u!114 &1617089402
 MonoBehaviour:
   m_ObjectHideFlags: 0
