@@ -74,7 +74,8 @@ This project was built with scalability and clean architecture in mind, utilizin
 
 ## 🚀 How to Play
 
-1.  Download the latest release from the [Releases](https://github.com/xiaofei1412/Room1408/releases/tag/v1.0.0) tab.
+1.  Download the latest release from the [Releases](https://github.com/xiaofei1412/Room1408/releases/tag/v1.0.0/ROOM_Windows_v1.0.zip
+) tab.
 2.  Extract the `ROOM_Windows_v1.0.zip` file.
 3.  Ensure `ROOM.exe` and the `ROOM_Data` folder are in the same directory.
 4.  Double-click `ROOM.exe` to launch the game. *(Headphones are highly recommended for the best experience).*
